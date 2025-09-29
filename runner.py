@@ -34,8 +34,9 @@ def forecast_with_metrics(
     batch_size: int = 32,
     model_size: str = "small",
     patch_size: str = "auto",
-    output_path: str = "predicted_data.csv"
-) -> (pd.DataFrame, dict):
+    output_path: str = "predicted_data.csv",
+    quantile: float = 0.9
+) -> tuple[pd.DataFrame, dict]:
     model_map = {
         "moirai2": run_moirai,
         "moirai": run_moirai,
@@ -57,6 +58,7 @@ def forecast_with_metrics(
         model_size=model_size,
         patch_size=patch_size,
         model_name=model,
+        quantile=quantile,
     )
 
     # Load original data for metric calculation and plotting
@@ -76,8 +78,8 @@ def forecast_with_metrics(
         augmented_df = pd.read_csv(csv_path, parse_dates=['time'])
         merged_df = pd.merge(merged_df, augmented_df[['time', 'augmented_value']], on='time', how='left')
 
-    actual = merged_df["value"].values
-    pred = merged_df["predicted_value"].values
+    actual = np.array(merged_df["value"].values, dtype=float)
+    pred = np.array(merged_df["predicted_value"].values, dtype=float)
 
     mae = mean_absolute_error(actual, pred)
     rmse = mean_squared_error(actual, pred, squared=False)
@@ -100,7 +102,7 @@ def forecast_with_metrics(
 
 def plot(df_to_plot: pd.DataFrame, output_path: str, title: str = "Forecast: Predicted vs. Actual Values"):
     """
-    Plots the predicted and actual values from a DataFrame.
+    Plots the predicted and actual values from a DataFrame, including quantile bounds.
 
     Args:
         df_to_plot (pd.DataFrame): The DataFrame containing 'value' and 'predicted_value' columns.
@@ -118,6 +120,17 @@ def plot(df_to_plot: pd.DataFrame, output_path: str, title: str = "Forecast: Pre
         # Plot the 'value' (normal) and 'predicted_value'
         plt.plot(df_to_plot.index, df_to_plot['value'], label='Actual Value', marker='o')
         plt.plot(df_to_plot.index, df_to_plot['predicted_value'], label='Predicted Value', marker='x')
+
+        # Add quantile bounds if they exist
+        if 'quantile_lower' in df_to_plot.columns and 'quantile_upper' in df_to_plot.columns:
+            plt.fill_between(df_to_plot.index, 
+                           df_to_plot['quantile_lower'], 
+                           df_to_plot['quantile_upper'],
+                           alpha=0.3, label='Quantile Bounds', color='gray')
+            plt.plot(df_to_plot.index, df_to_plot['quantile_lower'], 
+                    linestyle='--', alpha=0.7, color='gray')
+            plt.plot(df_to_plot.index, df_to_plot['quantile_upper'], 
+                    linestyle='--', alpha=0.7, color='gray')
 
         # Add the augmented value plot if the column exists
         if 'augmented_value' in df_to_plot.columns:

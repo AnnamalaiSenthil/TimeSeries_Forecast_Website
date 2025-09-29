@@ -78,7 +78,7 @@ def index():
         
         try:
             # Save uploaded file to a temporary file
-            original_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            original_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename) # type: ignore
             file.save(original_csv_path)
 
             # Get user inputs from form
@@ -88,6 +88,7 @@ def index():
             pred_length = int(request.form.get('pred_length', 24))
             batch_size = int(request.form.get('batch_size', 32))
             test_length = int(request.form.get('test_length', 24*7))
+            quantile = float(request.form.get('quantile', 0.9))
 
             # Choose the model name
             model_name = ModelChooser(script_choice)
@@ -109,7 +110,8 @@ def index():
                     ctx_length=ctx_length,
                     pred_length=pred_length,
                     batch_size=batch_size,
-                    test_length=test_length
+                    test_length=test_length,
+                    quantile=quantile
                 )
                 
                 plot(df_original, plot_path, title=f"Original Forecast for {script_choice}")
@@ -134,7 +136,8 @@ def index():
                         ctx_length=ctx_length,
                         pred_length=pred_length,
                         batch_size=batch_size,
-                        test_length=test_length
+                        test_length=test_length,
+                        quantile=quantile
                     )
 
                     plot(df_augmented, plot_path_aug, title=f"Augmented Forecast for {script_choice}")
