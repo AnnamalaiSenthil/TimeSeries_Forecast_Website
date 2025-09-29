@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Series Forecaster</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+margin: 20px;
+background-color: #f4f4f4;
+color: #333;
+}
+.container {
+max-width: 800px;
+margin: auto;
+background: #fff;
+padding: 20px 30px;
+border-radius: 8px;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+h1 {
+color: #0056b3;
+text-align: center;
+}
+.form-section {
+background-color: #e9ecef;
+padding: 20px;
+border-radius: 5px;
+margin-bottom: 20px;
+}
+.form-group {
+margin-bottom: 15px;
+}
+label {
+display: block;
+margin-bottom: 5px;
+font-weight: bold;
+}
+input[type="file"], select, input[type="number"] {
+width: 100%;
+padding: 8px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 4px;
+}
+button {
+background-color: #007bff;
+color: white;
+padding: 10px 15px;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 16px;
+width: 100%;
+}
+button:hover {
+background-color: #0056b3;
+}
+.results-section {
+margin-top: 30px;
+border-top: 2px solid #ccc;
+padding-top: 20px;
+}
+.metrics-box {
+background-color: #f8f9fa;
+border: 1px solid #dee2e6;
+padding: 15px;
+border-radius: 5px;
+margin-bottom: 20px;
+}
+.metrics-box h3 {
+margin-top: 0;
+color: #495057;
+}
+.metrics-box p {
+margin: 5px 0;
+}
+.error-message {
+color: #dc3545;
+background-color: #f8d7da;
+border: 1px solid #f5c6cb;
+padding: 10px;
+border-radius: 5px;
+margin-bottom: 20px;
+}
+img {
+max-width: 100%;
+height: auto;
+display: block;
+margin-top: 20px;
+border: 1px solid #dee2e6;
+border-radius: 5px;
+}
+.optional-params {
+margin-top: 20px;
+padding: 15px;
+background-color: #f1f1f1;
+border-radius: 5px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Time Series Forecaster</h1>
+<div class="form-section">
+<h2>Forecasting Options</h2>
+<form action="/" method="post" enctype="multipart/form-data">
+<div class="form-group">
+<label for="file">Step 1: Upload your CSV file</label>
+<input type="file" id="file" name="file" accept=".csv" required>
+</div>
+<div class="form-group">
+<label for="augmentation">Step 2: Choose Augmentation</label>
+<select id="augmentation" name="augmentation">
+{% for label, value in augmentations.items() %}
+<option value="{{ value }}">{{ label }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="form-group">
+<label for="model">Step 3: Select a Model</label>
+<select id="model" name="model">
+{% for label, value in models.items() %}
+<option value="{{ value }}">{{ label }}</option>
+{% endfor %}
+</select>
+</div>
+
+            <div class="optional-params">
+                <h3>Optional Parameters</h3>
+                <div class="form-group">
+                    <label for="ctx_length">Context Length</label>
+                    <input type="number" id="ctx_length" name="ctx_length" value="168">
+                </div>
+                <div class="form-group">
+                    <label for="pred_length">Prediction Length</label>
+                    <input type="number" id="pred_length" name="pred_length" value="24">
+                </div>
+                <div class="form-group">
+                    <label for="batch_size">Batch Size</label>
+                    <input type="number" id="batch_size" name="batch_size" value="32">
+                </div>
+                <div class="form-group">
+                    <label for="test_length">Test Length</label>
+                    <input type="number" id="test_length" name="test_length" value="168">
+                </div>
+            </div>
+
+            <button type="submit">🚀 Run Forecasting</button>
+        </form>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="error-message">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if results %}
+    <div class="results-section">
+        <h2>Forecasting Results</h2>
+        <hr>
+        <h3>Original Data Forecast</h3>
+        <div class="metrics-box">
+            <h4>Metrics</h4>
+            {% for metric, value in results.original.metrics.items() %}
+                <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+            {% endfor %}
+        </div>
+        <img src="{{ results.original.plot_url }}" alt="Original Data Forecast Plot">
+        
+        {% if results.augmented %}
+        <hr>
+        <h3>Augmented Data Forecast</h3>
+        <div class="metrics-box">
+            <h4>Metrics</h4>
+            {% for metric, value in results.augmented.metrics.items() %}
+                <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+            {% endfor %}
+        </div>
+        <img src="{{ results.augmented.plot_url }}" alt="Augmented Data Forecast Plot">
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
