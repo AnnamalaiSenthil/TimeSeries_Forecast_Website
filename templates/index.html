@@ -113,11 +113,12 @@ border-radius: 5px;
 </div>
 <div class="form-group">
 <label for="augmentation">Step 2: Choose Augmentation</label>
-<select id="augmentation" name="augmentation">
+<select id="augmentation" name="augmentation" onchange="showAugmentationExplanation()">
 {% for label, value in augmentations.items() %}
 <option value="{{ value }}">{{ label }}</option>
 {% endfor %}
 </select>
+<p id="augmentation-explanation" style="font-size: 0.9em; color: #666; margin-top: 5px;"></p>
 </div>
 <div class="form-group">
 <label for="model">Step 3: Select a Model</label>
@@ -171,6 +172,7 @@ border-radius: 5px;
             <h4>Metrics</h4>
             {% for metric, value in results.original.metrics.items() %}
                 <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+                <p><small>{{ metrics_explanations[metric] }}</small></p>
             {% endfor %}
         </div>
         <img src="{{ results.original.plot_url }}" alt="Original Data Forecast Plot">
@@ -182,6 +184,7 @@ border-radius: 5px;
             <h4>Metrics</h4>
             {% for metric, value in results.augmented.metrics.items() %}
                 <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+                <p><small>{{ metrics_explanations[metric] }}</small></p>
             {% endfor %}
         </div>
         <img src="{{ results.augmented.plot_url }}" alt="Augmented Data Forecast Plot">
@@ -189,6 +192,21 @@ border-radius: 5px;
     </div>
     {% endif %}
 </div>
-
+<script>
+function showAugmentationExplanation() {
+    var select = document.getElementById('augmentation');
+    var explanation = document.getElementById('augmentation-explanation');
+    var selectedValue = select.value;
+    var explanations = {
+        "None": "",
+        "convex_hull_method": "Creates a new series by iteratively finding the maximum slope between the current point and future points within a relaxation period, and then extending the current point with that slope.",
+        "rolling_means": "Calculates the rolling mean of the series.",
+        "peak_multiplier": "Identifies peaks in the series and multiplies them by a given factor. It then smooths the modified peaks by taking the maximum of the current point and a linearly decreasing fraction of the neighboring modified peaks."
+    };
+    explanation.textContent = explanations[selectedValue];
+}
+// Show explanation for the initially selected value
+window.onload = showAugmentationExplanation;
+</script>
 </body>
 </html>

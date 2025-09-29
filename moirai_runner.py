@@ -1,6 +1,12 @@
 import pandas as pd
 import numpy as np
 import torch
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 from gluonts.dataset.pandas import PandasDataset
 from gluonts.dataset.split import split
 from uni2ts.model.moirai import MoiraiForecast, MoiraiModule
@@ -12,7 +18,7 @@ from uni2ts.eval_util.data import get_gluonts_test_dataset
 from uni2ts.eval_util.plot import plot_next_multi
 from uni2ts.model.moirai import MoiraiForecast, MoiraiModule
 from uni2ts.model.moirai_moe import MoiraiMoEForecast, MoiraiMoEModule
-from uni2ts.model.moirai2 import Moirai2Forecast, Moirai2Module
+# from uni2ts.model.moirai2 import Moirai2Forecast, Moirai2Module
 
 
 def run_moirai(
@@ -23,9 +29,10 @@ def run_moirai(
     test_length: int =24*7,
     model_size: str = "small",  # kept for compatibility; hardcoded
     patch_size: str = "auto",   # used only in Moirai
-    model_name: str = "moirai2",
+    model_name: str = "moirai",
     target_column: str= "value",
 ) -> pd.DataFrame:
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     # Load and preprocess CSV
     df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
     df = df[~df.index.duplicated(keep="first")]
@@ -46,7 +53,7 @@ def run_moirai(
     # Load model using fixed IDs (no dynamic model_size!)
     if model_name == "moirai":
         model = MoiraiForecast(
-            module=MoiraiModule.from_pretrained("Salesforce/moirai-1.1-R-small", device_map="cpu"),
+            module=MoiraiModule.from_pretrained("Salesforce/moirai-1.1-R-small"),
             prediction_length=pred_length,
             context_length=ctx_length,
             patch_size=patch_size if patch_size != "auto" else 32,
@@ -57,7 +64,7 @@ def run_moirai(
         )
     elif model_name == "moirai-moe":
         model = MoiraiMoEForecast(
-            module=MoiraiMoEModule.from_pretrained("Salesforce/moirai-moe-1.0-R-small", device_map="cpu"),
+            module=MoiraiMoEModule.from_pretrained("Salesforce/moirai-moe-1.0-R-small"),
             prediction_length=pred_length,
             context_length=ctx_length,
             patch_size=16,

@@ -20,7 +20,7 @@ app.config['STATIC_FOLDER'] = os.path.join(app.root_path, 'static')
 
 # Define the models and augmentations to pass to the template
 models = {
-    "MOIRAI 2.0": "moirai2",
+    "MOIRAI 2.0": "moirai",
     "CHRONOS": "chronos",
     "MOIRAI-MOE": "moirai-moe"
 }
@@ -29,6 +29,19 @@ augmentations = {
     "Convex Hull Method": "convex_hull_method",
     "Rolling Means (5)": "rolling_means",
     "Peak Multiplier": "peak_multiplier"
+}
+metrics_explanations = {
+    "MAE": "Mean Absolute Error: The average absolute difference between the predicted and actual values.",
+    "RMSE": "Root Mean Squared Error: The square root of the average of the squared differences between the predicted and actual values.",
+    "R2": "R-squared: The proportion of the variance in the dependent variable that is predictable from the independent variable(s).",
+    "SMAPE": "Symmetric Mean Absolute Percentage Error: A percentage error based on the absolute differences between the predicted and actual values.",
+    "MAPE": "Mean Absolute Percentage Error: The average of the absolute percentage errors.",
+    "Underpredictions": "The number of times the predicted value is less than the actual value."
+}
+augmentations_explanations = {
+    "convex_hull_method": "Creates a new series by iteratively finding the maximum slope between the current point and future points within a relaxation period, and then extending the current point with that slope.",
+    "rolling_means": "Calculates the rolling mean of the series.",
+    "peak_multiplier": "Identifies peaks in the series and multiplies them by a given factor. It then smooths the modified peaks by taking the maximum of the current point and a linearly decreasing fraction of the neighboring modified peaks."
 }
 
 # Create the static folder if it doesn't exist
@@ -134,7 +147,7 @@ def index():
                 # Catch any errors from the forecasting models
                 error_message = f"An error occurred: {e}"
                 flash(error_message)
-                return render_template("index.html", error=error_message, models=models, augmentations=augmentations)
+                return render_template("index.html", error=error_message, models=models, augmentations=augmentations, metrics_explanations=metrics_explanations, augmentations_explanations=augmentations_explanations)
             finally:
                 # Clean up temporary files
                 if original_csv_path and os.path.exists(original_csv_path):
@@ -142,13 +155,13 @@ def index():
                 if temp_file_to_clean and os.path.exists(temp_file_to_clean):
                     os.remove(temp_file_to_clean)
 
-            return render_template("index.html", results=results, models=models, augmentations=augmentations)
+            return render_template("index.html", results=results, models=models, augmentations=augmentations, metrics_explanations=metrics_explanations, augmentations_explanations=augmentations_explanations)
 
         except Exception as e:
             flash(f"An unexpected error occurred: {e}")
-            return render_template("index.html", error=str(e), models=models, augmentations=augmentations)
+            return render_template("index.html", error=str(e), models=models, augmentations=augmentations, metrics_explanations=metrics_explanations, augmentations_explanations=augmentations_explanations)
 
-    return render_template("index.html", models=models, augmentations=augmentations)
+    return render_template("index.html", models=models, augmentations=augmentations, metrics_explanations=metrics_explanations, augmentations_explanations=augmentations_explanations)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

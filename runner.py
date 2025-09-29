@@ -19,7 +19,7 @@ def ModelChooser(script_name):
     elif script_name == "chronos":
         return "chronos"
     elif script_name == "moirai2":
-        return "moirai2"
+        return "moirai"
     else:
         raise ValueError(f"Unknown script: {script_name}")
 
