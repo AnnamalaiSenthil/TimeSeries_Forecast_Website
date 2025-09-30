@@ -18,7 +18,7 @@ from uni2ts.eval_util.data import get_gluonts_test_dataset
 from uni2ts.eval_util.plot import plot_next_multi
 from uni2ts.model.moirai import MoiraiForecast, MoiraiModule
 from uni2ts.model.moirai_moe import MoiraiMoEForecast, MoiraiMoEModule
-# from uni2ts.model.moirai2 import Moirai2Forecast, Moirai2Module
+from uni2ts.model.moirai2 import Moirai2Forecast, Moirai2Module
 
 
 def run_moirai(
@@ -31,6 +31,7 @@ def run_moirai(
     patch_size: str = "auto",   # used only in Moirai
     model_name: str = "moirai",
     target_column: str= "value",
+    quantile: float = 0.99,
 ) -> pd.DataFrame:
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     # Load and preprocess CSV
@@ -92,11 +93,26 @@ def run_moirai(
     forecasts = predictor.predict(test_data.input)
 
     prediction_results = []
+    lower_quantile = (1 - quantile) / 2
+    upper_quantile = 1 - lower_quantile
+    
     for forecast in forecasts:
         start_date = pd.Period(forecast.start_date).to_timestamp()
         pred_len = len(forecast.mean)
         timestamps = pd.date_range(start=start_date, periods=pred_len, freq="H")
-        for timestamp, pred_value in zip(timestamps, forecast.mean):
-            prediction_results.append({"time": timestamp, "predicted_value": pred_value})
+        
+        # Get quantile bounds
+        quantile_lower_values = forecast.quantile(lower_quantile)
+        quantile_upper_values = forecast.quantile(upper_quantile)
+        
+        for timestamp, pred_value, lower_val, upper_val in zip(
+            timestamps, forecast.mean, quantile_lower_values, quantile_upper_values
+        ):
+            prediction_results.append({
+                "time": timestamp, 
+                "predicted_value": pred_value,
+                "quantile_lower": lower_val,
+                "quantile_upper": upper_val
+            })
 
     return pd.DataFrame(prediction_results)

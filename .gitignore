@@ -1,3 +1,5 @@
 ml-env/
 uni2ts/
 chronos-forecasting/
+static/
+__pycache__/

@@ -20,7 +20,8 @@ app.config['STATIC_FOLDER'] = os.path.join(app.root_path, 'static')
 
 # Define the models and augmentations to pass to the template
 models = {
-    "MOIRAI 2.0": "moirai",
+    "MOIRAI": "moirai",
+    "MOIRAI 2.0": "moirai2",
     "CHRONOS": "chronos",
     "MOIRAI-MOE": "moirai-moe"
 }
@@ -36,7 +37,8 @@ metrics_explanations = {
     "R2": "R-squared: The proportion of the variance in the dependent variable that is predictable from the independent variable(s).",
     "SMAPE": "Symmetric Mean Absolute Percentage Error: A percentage error based on the absolute differences between the predicted and actual values.",
     "MAPE": "Mean Absolute Percentage Error: The average of the absolute percentage errors.",
-    "Underpredictions": "The number of times the predicted value is less than the actual value."
+    "Underpredictions": "The number of times the predicted value is less than the actual value.",
+    "Underpredictions Outside Bounds": "The number of times the actual value exceeds the upper quantile bound (marked as red lines on the plot)."
 }
 augmentations_explanations = {
     "convex_hull_method": "Creates a new series by iteratively finding the maximum slope between the current point and future points within a relaxation period, and then extending the current point with that slope.",
@@ -75,10 +77,11 @@ def index():
 
         original_csv_path = None
         temp_file_to_clean = None
+        uploaded_filename = file.filename  # Store the original filename
         
         try:
             # Save uploaded file to a temporary file
-            original_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            original_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename) # type: ignore
             file.save(original_csv_path)
 
             # Get user inputs from form
@@ -88,11 +91,16 @@ def index():
             pred_length = int(request.form.get('pred_length', 24))
             batch_size = int(request.form.get('batch_size', 32))
             test_length = int(request.form.get('test_length', 24*7))
+            quantile = float(request.form.get('quantile', 0.99))
 
             # Choose the model name
             model_name = ModelChooser(script_choice)
 
-            results = {}
+            results = {
+                'filename': uploaded_filename,
+                'model': script_choice,
+                'quantile': quantile
+            }
 
             try:
                 # --- FIRST RUN: Original data forecasting ---
@@ -109,7 +117,8 @@ def index():
                     ctx_length=ctx_length,
                     pred_length=pred_length,
                     batch_size=batch_size,
-                    test_length=test_length
+                    test_length=test_length,
+                    quantile=quantile
                 )
                 
                 plot(df_original, plot_path, title=f"Original Forecast for {script_choice}")
@@ -134,7 +143,8 @@ def index():
                         ctx_length=ctx_length,
                         pred_length=pred_length,
                         batch_size=batch_size,
-                        test_length=test_length
+                        test_length=test_length,
+                        quantile=quantile
                     )
 
                     plot(df_augmented, plot_path_aug, title=f"Augmented Forecast for {script_choice}")
