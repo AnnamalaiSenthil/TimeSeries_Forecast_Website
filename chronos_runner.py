@@ -13,7 +13,7 @@ def run_chronos(
     patch_size: str = "auto",
     model_name: str = "chronos",
     target_column: str= "value",
-    quantile: float = 0.9,
+    quantile: float = 0.99,
 ) -> pd.DataFrame:
     # Load CSV
     df = pd.read_csv(csv_path, parse_dates=["time"], index_col="time")

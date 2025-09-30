@@ -31,7 +31,7 @@ def run_moirai(
     patch_size: str = "auto",   # used only in Moirai
     model_name: str = "moirai",
     target_column: str= "value",
-    quantile: float = 0.9,
+    quantile: float = 0.99,
 ) -> pd.DataFrame:
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     # Load and preprocess CSV
