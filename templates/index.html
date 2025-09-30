@@ -113,18 +113,17 @@ border-radius: 5px;
 </div>
 <div class="form-group">
 <label for="augmentation">Step 2: Choose Augmentation</label>
-<select id="augmentation" name="augmentation" onchange="showAugmentationExplanation()">
+<select id="augmentation" name="augmentation">
 {% for label, value in augmentations.items() %}
 <option value="{{ value }}">{{ label }}</option>
 {% endfor %}
 </select>
-<p id="augmentation-explanation" style="font-size: 0.9em; color: #666; margin-top: 5px;"></p>
 </div>
 <div class="form-group">
 <label for="model">Step 3: Select a Model</label>
 <select id="model" name="model">
 {% for label, value in models.items() %}
-<option value="{{ value }}">{{ label }}</option>
+<option value="{{ value }}" {% if value == "moirai2" %}selected{% endif %}>{{ label }}</option>
 {% endfor %}
 </select>
 </div>
@@ -148,9 +147,9 @@ border-radius: 5px;
                     <input type="number" id="test_length" name="test_length" value="168">
                 </div>
                 <div class="form-group">
-                    <label for="quantile">Quantile (0.0-1.0)</label>
-                    <input type="number" id="quantile" name="quantile" value="0.9" step="0.01" min="0.01" max="0.99">
-                    <small style="color: #666;">Enter a quantile value between 0.01 and 0.99 for confidence bounds (e.g., 0.9 for 90th percentile)</small>
+                    <label for="quantile">Quantile (0.0001-0.9999)</label>
+                    <input type="number" id="quantile" name="quantile" value="0.99" step="0.0001" min="0.0001" max="0.9999">
+                    <small style="color: #666;">Enter a quantile value between 0.0001 and 0.9999 for confidence bounds (e.g., 0.99 for 99th percentile)</small>
                 </div>
             </div>
 
@@ -171,13 +170,22 @@ border-radius: 5px;
     {% if results %}
     <div class="results-section">
         <h2>Forecasting Results</h2>
+        <div class="metrics-box">
+            <h4>File Information</h4>
+            <p><strong>Uploaded File:</strong> {{ results.filename }}</p>
+            <p><strong>Model Used:</strong> {{ results.model }}</p>
+            <p><strong>Quantile Level:</strong> {{ results.quantile }}</p>
+        </div>
         <hr>
         <h3>Original Data Forecast</h3>
         <div class="metrics-box">
             <h4>Metrics</h4>
             {% for metric, value in results.original.metrics.items() %}
-                <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
-                <p><small>{{ metrics_explanations[metric] }}</small></p>
+                {% if metric == "Underpredictions Outside Bounds" or metric == "Underpredictions" %}
+                    <p><strong>{{ metric }}:</strong> {{ value }}</p>
+                {% else %}
+                    <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+                {% endif %}
             {% endfor %}
         </div>
         <img src="{{ results.original.plot_url }}" alt="Original Data Forecast Plot">
@@ -188,8 +196,11 @@ border-radius: 5px;
         <div class="metrics-box">
             <h4>Metrics</h4>
             {% for metric, value in results.augmented.metrics.items() %}
-                <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
-                <p><small>{{ metrics_explanations[metric] }}</small></p>
+                {% if metric == "Underpredictions Outside Bounds" or metric == "Underpredictions" %}
+                    <p><strong>{{ metric }}:</strong> {{ value }}</p>
+                {% else %}
+                    <p><strong>{{ metric }}:</strong> {{ "%.4f" | format(value) }}</p>
+                {% endif %}
             {% endfor %}
         </div>
         <img src="{{ results.augmented.plot_url }}" alt="Augmented Data Forecast Plot">
@@ -197,21 +208,6 @@ border-radius: 5px;
     </div>
     {% endif %}
 </div>
-<script>
-function showAugmentationExplanation() {
-    var select = document.getElementById('augmentation');
-    var explanation = document.getElementById('augmentation-explanation');
-    var selectedValue = select.value;
-    var explanations = {
-        "None": "",
-        "convex_hull_method": "Creates a new series by iteratively finding the maximum slope between the current point and future points within a relaxation period, and then extending the current point with that slope.",
-        "rolling_means": "Calculates the rolling mean of the series.",
-        "peak_multiplier": "Identifies peaks in the series and multiplies them by a given factor. It then smooths the modified peaks by taking the maximum of the current point and a linearly decreasing fraction of the neighboring modified peaks."
-    };
-    explanation.textContent = explanations[selectedValue];
-}
-// Show explanation for the initially selected value
-window.onload = showAugmentationExplanation;
-</script>
+
 </body>
 </html>
